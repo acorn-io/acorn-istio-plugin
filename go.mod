@@ -6,6 +6,8 @@ require (
 	github.com/acorn-io/baaah v0.0.0-20230314011022-8b20d035baa2
 	github.com/rancher/wrangler v1.1.1
 	github.com/sirupsen/logrus v1.8.1
+	istio.io/api v0.0.0-20230322185124-6a21629f95a9
+	istio.io/client-go v1.16.3
 	k8s.io/api v0.25.4
 	k8s.io/apiextensions-apiserver v0.25.4
 	k8s.io/apimachinery v0.25.4
@@ -55,6 +57,7 @@ require (
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20220628213854-d9e0b6570c03 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

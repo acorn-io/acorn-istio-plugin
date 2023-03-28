@@ -1,46 +1,39 @@
 containers: "istio-plugin-controller": {
-    build: "."
-    env: {
-        IMAGE: "${secret://image/image}"
-    }
-    command: ["--debug-image", "$(IMAGE)"]
-    permissions: {
-        clusterRules: [
-            {
-                verbs: ["list", "get", "patch", "update", "watch"]
-                apiGroups: [""]
-                resources: ["namespaces"]
-            },
-            {
-                verbs: ["get", "create", "update"]
-                apiGroups: ["coordination.k8s.io"]
-                resources: ["leases"]
-            },
-            {
-                verbs: ["*"]
-                apiGroups: [""]
-                resources: ["pods"]
-            },
-            {
-                verbs: ["patch", "update"]
-                apiGroups: [""]
-                resources: ["pods/ephemeralcontainers"]
-            },
-        ]
-    }
+	build: "."
+	env: IMAGE: "${secret://image/image}"
+	command: ["--debug-image", "$(IMAGE)"]
+	permissions: clusterRules: [
+		{
+			verbs: ["list", "get", "patch", "update", "watch"]
+			apiGroups: [""]
+			resources: ["namespaces"]
+		},
+		{
+			verbs: ["get", "create", "update"]
+			apiGroups: ["coordination.k8s.io"]
+			resources: ["leases"]
+		},
+		{
+			verbs: ["*"]
+			apiGroups: [""]
+			resources: ["pods"]
+		},
+		{
+			verbs: ["patch", "update"]
+			apiGroups: [""]
+			resources: ["pods/ephemeralcontainers"]
+		},
+		{
+			verbs: ["*"]
+			apiGroups: ["security.istio.io"]
+			resources: ["peerauthentications"]
+		},
+	]
 }
 
-secrets: {
-    image: {
-        type: "template"
-        data: {
-            image: "${image://debug}"
-        }
-    }
+secrets: image: {
+	type: "template"
+	data: image: "${image://debug}"
 }
 
-images: {
-    debug: {
-        build: "."
-    }
-}
+images: debug: build: "."
