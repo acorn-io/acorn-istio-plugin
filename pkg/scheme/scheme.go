@@ -2,6 +2,7 @@ package scheme
 
 import (
 	"github.com/rancher/wrangler/pkg/merr"
+	securityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -31,6 +32,7 @@ func AddToScheme(scheme *runtime.Scheme) error {
 	errs = append(errs, rbacv1.AddToScheme(scheme))
 	errs = append(errs, authv1.AddToScheme(scheme))
 	errs = append(errs, apiextensionv1.AddToScheme(scheme))
+	errs = append(errs, securityv1beta1.AddToScheme(scheme))
 	return merr.NewErrors(errs...)
 }
 

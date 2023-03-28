@@ -38,7 +38,13 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 		return err
 	}
 
+	appNamespaceSelector, err := getAppNamespaceSelector()
+	if err != nil {
+		return err
+	}
+
 	router.Type(&corev1.Namespace{}).Selector(projectSelector).HandlerFunc(AddLabels)
+	router.Type(&corev1.Namespace{}).Selector(appNamespaceSelector).HandlerFunc(PeerAuthenticationForApp)
 	router.Type(&corev1.Pod{}).Selector(managedSelector).Selector(jobSelector).HandlerFunc(h.KillIstioSidecar)
 	return nil
 }
@@ -62,4 +68,12 @@ func getJobPodSelector() (labels.Selector, error) {
 		return nil, err
 	}
 	return labels.NewSelector().Add(*r1), nil
+}
+
+func getAppNamespaceSelector() (labels.Selector, error) {
+	req, err := labels.NewRequirement(appNamespaceLabel, selection.Exists, nil)
+	if err != nil {
+		return nil, err
+	}
+	return labels.NewSelector().Add(*req), nil
 }
