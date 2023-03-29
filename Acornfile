@@ -1,7 +1,24 @@
+profiles: {
+    dev: {
+        ingressControllerNamespace: "kube-system"
+        allowTrafficFromNamespaces: "datadog-agent,prometheus-operator,prometheus,monitoring"
+        local: "true"
+    }
+}
+
+args: {
+    // The namespace where the ingress controller is installed
+    ingressControllerNamespace: "traefik"
+    // List of namespaces that must send traffic to all Acorn apps (comma separated)
+    allowTrafficFromNamespaces: ""
+    // Set to "true" if running in a local cluster
+    local: "false"
+}
+
 containers: "istio-plugin-controller": {
 	build: "."
 	env: IMAGE: "${secret://image/image}"
-	command: ["--debug-image", "$(IMAGE)"]
+	command: ["--debug-image", "$(IMAGE)", "--ingress-controller-namespace", args.ingressControllerNamespace, "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces, "--local=\(args.local)"]
 	permissions: clusterRules: [
 		{
 			verbs: ["list", "get", "patch", "update", "watch"]
@@ -26,8 +43,23 @@ containers: "istio-plugin-controller": {
 		{
 			verbs: ["*"]
 			apiGroups: ["security.istio.io"]
-			resources: ["peerauthentications"]
+			resources: ["peerauthentications", "authorizationpolicies"]
 		},
+		{
+		    verbs: ["list", "get", "watch"]
+		    apiGroups: ["networking.k8s.io"]
+		    resources: ["ingresses"]
+		},
+		{
+		    verbs: ["list", "get", "watch"]
+		    apiGroups: [""]
+		    resources: ["services"]
+		},
+		{
+		    verbs: ["list", "get"]
+		    apiGroups: [""]
+		    resources: ["nodes"]
+		}
 	]
 }
 
