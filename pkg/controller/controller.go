@@ -11,9 +11,7 @@ import (
 type Options struct {
 	K8s                        kubernetes.Interface
 	DebugImage                 string
-	IngressControllerNamespace string
 	AllowTrafficFromNamespaces string
-	Local                      bool
 }
 
 func Start(ctx context.Context, opt Options) error {
@@ -22,7 +20,7 @@ func Start(ctx context.Context, opt Options) error {
 		return err
 	}
 
-	if err := RegisterRoutes(router, opt.K8s, opt.DebugImage, opt.IngressControllerNamespace, opt.AllowTrafficFromNamespaces, opt.Local); err != nil {
+	if err := RegisterRoutes(router, opt.K8s, opt.DebugImage, opt.AllowTrafficFromNamespaces); err != nil {
 		return err
 	}
 

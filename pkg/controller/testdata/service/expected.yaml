@@ -1,0 +1,45 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: acorn-my-app-one-publish-one
+  namespace: my-app-namespace
+spec:
+  portLevelMtls:
+    "8080":
+      mode: PERMISSIVE
+    "9090":
+      mode: PERMISSIVE
+  selector:
+    matchLabels:
+      acorn.io/app-name: my-app
+      acorn.io/app-namespace: acorn
+      acorn.io/managed: "true"
+      port-number.acorn.io/8080: "true"
+      port-number.acorn.io/9090: "true"
+      service-name.acorn.io/one: "true"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: acorn-my-app-one-publish-one
+  namespace: my-app-namespace
+spec:
+  rules:
+    - from:
+        - source:
+            ipBlocks:
+              - 0.0.0.0/0
+      to:
+        - operation:
+            ports:
+              - "8080"
+              - "9090"
+  selector:
+    matchLabels:
+      acorn.io/app-name: my-app
+      acorn.io/app-namespace: acorn
+      acorn.io/managed: "true"
+      port-number.acorn.io/8080: "true"
+      port-number.acorn.io/9090: "true"
+      service-name.acorn.io/one: "true"
