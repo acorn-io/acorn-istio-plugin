@@ -1,13 +1,15 @@
 # acorn-istio-plugin
 
-> This plugin is a WORK IN PROGRESS.
-
 acorn-istio-plugin is an Acorn plugin to enable mTLS in Acorn using Istio.
 
-This plugin is responsible for two things:
+This plugin is responsible for the following:
 
 1. Adding service mesh annotations to Acorn project namespaces, which will then be propagated to app namespaces.
-2. Kill Istio sidecars on Acorn jobs, once the other containers in the job have completed.
+2. Killing Istio sidecars on Acorn jobs, once the other containers in the job have completed.
+3. Setting up a STRICT PeerAuthentication for every Acorn app.
+4. Setting up a PERMISSIVE PeerAuthentication for every published port in every Acorn app.
+5. Setting up AuthorizationPolicies to allow only the needed traffic.
+   - The AuthorizationPolicies allow traffic from any IP address to published ports. Acorn's built-in NetworkPolicies are more restrictive than this, and allow only traffic coming from outside the cluster to the published ports, if it is configured properly. See the [docs](https://docs.acorn.io/next/installation/options#kubernetes-networkpolicies) for more information.
 
 ## Build
 
