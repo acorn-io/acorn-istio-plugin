@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: foo
+  labels:
+    acorn.io/app-name: my-app-name
+    acorn.io/app-namespace: acorn
+    acorn.io/managed: "true"
+    istio-injection: enabled
+    kubernetes.io/metadata.name: foo

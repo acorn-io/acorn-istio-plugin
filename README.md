@@ -39,5 +39,5 @@ helm install istiod istio/istiod -n istio-system
 Run the plugin with Acorn:
 
 ```shell
-acorn run --name acorn-istio-plugin -i .
+acorn run --name acorn-istio-plugin .
 ```

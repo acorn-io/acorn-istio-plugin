@@ -1,0 +1,83 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: acorn-my-app-my-service-service-7777
+  namespace: my-app-namespace
+spec:
+  portLevelMtls:
+    "9999":
+      mode: PERMISSIVE
+    "10000":
+      mode: PERMISSIVE
+  selector:
+    matchLabels:
+      acorn.io/app-name: my-app
+      acorn.io/app-namespace: acorn
+      acorn.io/managed: "true"
+      port-number.acorn.io/9999: "true"
+      service-name.acorn.io/service-7777: "true"
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: acorn-my-app-my-service-nginx-9090
+  namespace: my-app-namespace
+spec:
+  portLevelMtls:
+    "9090":
+      mode: PERMISSIVE
+  selector:
+    matchLabels:
+      acorn.io/app-name: my-app
+      acorn.io/app-namespace: acorn
+      acorn.io/managed: "true"
+      port-number.acorn.io/9090: "true"
+      service-name.acorn.io/nginx-9090: "true"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: acorn-my-app-my-service-service-7777
+  namespace: my-app-namespace
+spec:
+  rules:
+    - from:
+        - source:
+            ipBlocks:
+              - 10.42.0.0/24
+      to:
+        - operation:
+            ports:
+              - "9999"
+              - "10000"
+  selector:
+    matchLabels:
+      acorn.io/app-name: my-app
+      acorn.io/app-namespace: acorn
+      acorn.io/managed: "true"
+      port-number.acorn.io/9999: "true"
+      service-name.acorn.io/service-7777: "true"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: acorn-my-app-my-service-nginx-9090
+  namespace: my-app-namespace
+spec:
+  rules:
+    - from:
+        - source:
+            ipBlocks:
+              - 10.42.0.0/24
+      to:
+        - operation:
+            ports:
+              - "9090"
+  selector:
+    matchLabels:
+      acorn.io/app-name: my-app
+      acorn.io/app-namespace: acorn
+      acorn.io/managed: "true"
+      port-number.acorn.io/9090: "true"
+      service-name.acorn.io/nginx-9090: "true"
