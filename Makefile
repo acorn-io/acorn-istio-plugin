@@ -1,28 +1,32 @@
 build:
 	CGO_ENABLED=0 go build -o bin/istio-plugin -ldflags "-s -w" .
 
-generate:
-	go generate
+tidy:
+	go mod tidy
 
-validate:
+lint: setup-env
 	golangci-lint --timeout 5m run
 
-image:
-	docker build .
+test:
+	go test ./...
 
-validate-ci: generate
-	go mod tidy
+validate: tidy lint
 	if [ -n "$$(git status --porcelain)" ]; then \
 		git status --porcelain; \
 		echo "Encountered dirty repo!"; \
 		exit 1 \
 	;fi
 
-test:
-	go test ./...
+GOLANGCI_LINT_VERSION ?= v1.51.1
+setup-env: 
+	if ! command -v golangci-lint &> /dev/null; then \
+  		echo "Could not find golangci-lint, installing version $(GOLANGCI_LINT_VERSION)."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
+	fi
+
+image:
+	docker build .
 
 goreleaser:
 	goreleaser build --snapshot --single-target --rm-dist
 
-setup-ci-env:
-	curl -sSFL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.50.1
