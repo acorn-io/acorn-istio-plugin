@@ -1,13 +1,15 @@
 # acorn-istio-plugin
 
-> This plugin is a WORK IN PROGRESS.
-
 acorn-istio-plugin is an Acorn plugin to enable mTLS in Acorn using Istio.
 
-This plugin is responsible for two things:
+This plugin is responsible for the following:
 
 1. Adding service mesh annotations to Acorn project namespaces, which will then be propagated to app namespaces.
-2. Kill Istio sidecars on Acorn jobs, once the other containers in the job have completed.
+2. Killing Istio sidecars on Acorn jobs, once the other containers in the job have completed.
+3. Setting up a STRICT PeerAuthentication for every Acorn app.
+4. Setting up a PERMISSIVE PeerAuthentication for every published port in every Acorn app.
+5. Setting up AuthorizationPolicies to allow only the needed traffic.
+   - The AuthorizationPolicies allow traffic from any IP address to published ports. Acorn's built-in NetworkPolicies are more restrictive than this, and allow only traffic coming from outside the cluster to the published ports, if it is configured properly. See the [docs](https://docs.acorn.io/next/installation/options#kubernetes-networkpolicies) for more information.
 
 ## Build
 
@@ -15,9 +17,12 @@ This plugin is responsible for two things:
 make build
 ```
 
-## Development
+## Args
 
-### Prerequisites
+- `--allow-traffic-from-namespaces`: list of namespaces to allow to connect to all Acorn apps as a single string, comma separated
+  - example: `--allow-traffic-from-namespaces "monitoring,kube-system"`
+
+## Prerequisites
 
 Your local Kubernetes cluster needs to have Acorn installed with the following options at a minimum:
 
@@ -34,10 +39,17 @@ helm install istio istio/base -n istio-system --create-namespace
 helm install istiod istio/istiod -n istio-system
 ```
 
-### Running the plugin
+## Running the plugin
 
 Run the plugin with Acorn:
 
 ```shell
+# dev mode:
 acorn run --name acorn-istio-plugin -i .
+
+# latest main build:
+acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:main
+
+# production:
+acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:prod
 ```

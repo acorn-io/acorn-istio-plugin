@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/acorn-io/baaah/pkg/router"
 	corev1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
@@ -22,10 +23,12 @@ var (
 	jobLabel          = "acorn.io/job-name"
 )
 
-func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugImage string) error {
+func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugImage, allowTrafficFromNamespaces string) error {
+
 	h := Handler{
-		client:     client,
-		debugImage: debugImage,
+		client:                     client,
+		debugImage:                 debugImage,
+		allowTrafficFromNamespaces: allowTrafficFromNamespaces,
 	}
 
 	managedSelector, err := getAcornManagedSelector()
@@ -38,7 +41,16 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 		return err
 	}
 
+	appNamespaceSelector, err := getAppNamespaceSelector()
+	if err != nil {
+		return err
+	}
+
 	router.Type(&corev1.Namespace{}).Selector(projectSelector).HandlerFunc(AddLabels)
+	router.Type(&corev1.Namespace{}).Selector(appNamespaceSelector).HandlerFunc(h.PoliciesForApp)
+	router.Type(&netv1.Ingress{}).Selector(managedSelector).HandlerFunc(h.PoliciesForIngress)
+	router.Type(&netv1.Ingress{}).Selector(managedSelector).FinalizeFunc("acorn.io/istio", h.PoliciesForIngress)
+	router.Type(&corev1.Service{}).Selector(managedSelector).HandlerFunc(h.PoliciesForService)
 	router.Type(&corev1.Pod{}).Selector(managedSelector).Selector(jobSelector).HandlerFunc(h.KillIstioSidecar)
 	return nil
 }
@@ -62,4 +74,12 @@ func getJobPodSelector() (labels.Selector, error) {
 		return nil, err
 	}
 	return labels.NewSelector().Add(*r1), nil
+}
+
+func getAppNamespaceSelector() (labels.Selector, error) {
+	req, err := labels.NewRequirement(appNamespaceLabel, selection.Exists, nil)
+	if err != nil {
+		return nil, err
+	}
+	return labels.NewSelector().Add(*req), nil
 }
