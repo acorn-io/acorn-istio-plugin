@@ -17,9 +17,12 @@ This plugin is responsible for the following:
 make build
 ```
 
-## Development
+## Args
 
-### Prerequisites
+- `--allow-traffic-from-namespaces`: list of namespaces to allow to connect to all Acorn apps as a single string, comma separated
+  - example: `--allow-traffic-from-namespaces "monitoring,kube-system"`
+
+## Prerequisites
 
 Your local Kubernetes cluster needs to have Acorn installed with the following options at a minimum:
 
@@ -36,10 +39,17 @@ helm install istio istio/base -n istio-system --create-namespace
 helm install istiod istio/istiod -n istio-system
 ```
 
-### Running the plugin
+## Running the plugin
 
 Run the plugin with Acorn:
 
 ```shell
-acorn run --name acorn-istio-plugin .
+# dev mode:
+acorn run --name acorn-istio-plugin -i .
+
+# latest main build:
+acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:main
+
+# production:
+acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:prod
 ```
