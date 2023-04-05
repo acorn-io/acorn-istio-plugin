@@ -18,6 +18,13 @@ var (
 		"acorn.io/managed": "true",
 	})
 
+	istiodSelector = labels.SelectorFromSet(map[string]string{
+		"app":   "istiod",
+		"istio": "pilot",
+	})
+
+	istioSystemNamespace = "istio-system"
+
 	appNameLabel      = "acorn.io/app-name"
 	appNamespaceLabel = "acorn.io/app-namespace"
 	jobLabel          = "acorn.io/job-name"
@@ -52,6 +59,7 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 	router.Type(&netv1.Ingress{}).Selector(managedSelector).FinalizeFunc("acorn.io/istio", h.PoliciesForIngress)
 	router.Type(&corev1.Service{}).Selector(managedSelector).HandlerFunc(h.PoliciesForService)
 	router.Type(&corev1.Pod{}).Selector(managedSelector).Selector(jobSelector).HandlerFunc(h.KillIstioSidecar)
+	router.Type(&corev1.Pod{}).Selector(istiodSelector).Namespace(istioSystemNamespace).HandlerFunc(LabelIstiodPod)
 	return nil
 }
 
