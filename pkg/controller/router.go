@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/acorn-io/baaah/pkg/router"
+	securityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -56,7 +57,8 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 	router.Type(&corev1.Namespace{}).Selector(projectSelector).HandlerFunc(AddLabels)
 	router.Type(&corev1.Namespace{}).Selector(appNamespaceSelector).HandlerFunc(h.PoliciesForApp)
 	router.Type(&netv1.Ingress{}).Selector(managedSelector).HandlerFunc(h.PoliciesForIngress)
-	router.Type(&netv1.Ingress{}).Selector(managedSelector).FinalizeFunc("acorn.io/istio", h.PoliciesForIngress)
+	router.Type(&securityv1beta1.PeerAuthentication{}).Selector(managedSelector).HandlerFunc(GCOrphans)
+	router.Type(&securityv1beta1.AuthorizationPolicy{}).Selector(managedSelector).HandlerFunc(GCOrphans)
 	router.Type(&corev1.Service{}).Selector(managedSelector).HandlerFunc(h.PoliciesForService)
 	router.Type(&corev1.Pod{}).Selector(managedSelector).Selector(jobSelector).HandlerFunc(h.KillIstioSidecar)
 	router.Type(&corev1.Pod{}).Selector(istiodSelector).Namespace(istioSystemNamespace).HandlerFunc(LabelIstiodPod)
