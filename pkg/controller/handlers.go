@@ -28,6 +28,7 @@ const (
 	acornAppNameLabel       = "acorn.io/app-name"
 	acornProjectNameLabel   = "acorn.io/app-namespace"
 	acornContainerNameLabel = "acorn.io/container-name"
+	acornManagedLabel       = "acorn.io/managed"
 
 	masterLabel = "on-master"
 
@@ -122,6 +123,9 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.SafeConcatName(appNamespace.Name, "strict"),
 			Namespace: appNamespace.Name,
+			Labels: map[string]string{
+				acornManagedLabel: "true",
+			},
 		},
 		Spec: v1beta1.PeerAuthentication{
 			Mtls: &v1beta1.PeerAuthentication_MutualTLS{
@@ -154,6 +158,9 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.SafeConcatName(appNamespace.Name, "authorization"),
 			Namespace: appNamespace.Name,
+			Labels: map[string]string{
+				acornManagedLabel: "true",
+			},
 		},
 		Spec: v1beta1.AuthorizationPolicy{
 			Rules: []*v1beta1.Rule{{
@@ -272,6 +279,9 @@ func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) er
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      policyName,
 				Namespace: svc.Namespace,
+				Labels: map[string]string{
+					acornManagedLabel: "true",
+				},
 			},
 			Spec: v1beta1.PeerAuthentication{
 				Selector: &typev1beta1.WorkloadSelector{
@@ -288,6 +298,9 @@ func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) er
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      policyName,
 				Namespace: svc.Namespace,
+				Labels: map[string]string{
+					acornManagedLabel: "true",
+				},
 			},
 			Spec: v1beta1.AuthorizationPolicy{
 				Selector: &typev1beta1.WorkloadSelector{
@@ -348,6 +361,9 @@ func (h Handler) PoliciesForService(req router.Request, resp router.Response) er
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      policyName,
 			Namespace: service.Namespace,
+			Labels: map[string]string{
+				acornManagedLabel: "true",
+			},
 		},
 		Spec: v1beta1.PeerAuthentication{
 			Selector: &typev1beta1.WorkloadSelector{
@@ -364,6 +380,9 @@ func (h Handler) PoliciesForService(req router.Request, resp router.Response) er
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      policyName,
 			Namespace: service.Namespace,
+			Labels: map[string]string{
+				acornManagedLabel: "true",
+			},
 		},
 		Spec: v1beta1.AuthorizationPolicy{
 			Selector: &typev1beta1.WorkloadSelector{

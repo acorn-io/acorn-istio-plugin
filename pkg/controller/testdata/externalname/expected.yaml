@@ -4,6 +4,8 @@ kind: PeerAuthentication
 metadata:
   name: acorn-my-app-service-7777-service-7777
   namespace: my-app-namespace
+  labels:
+    acorn.io/managed: "true"
 spec:
   portLevelMtls:
     "9999":
@@ -21,6 +23,8 @@ kind: AuthorizationPolicy
 metadata:
   name: acorn-my-app-service-7777-service-7777
   namespace: my-app-namespace
+  labels:
+    acorn.io/managed: "true"
 spec:
   rules:
     - from:
