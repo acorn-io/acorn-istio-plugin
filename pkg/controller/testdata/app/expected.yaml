@@ -4,6 +4,8 @@ kind: PeerAuthentication
 metadata:
   name: foo-strict
   namespace: foo
+  labels:
+    acorn.io/managed: "true"
 spec:
   mtls:
     mode: STRICT
@@ -13,6 +15,8 @@ kind: AuthorizationPolicy
 metadata:
   name: foo-authorization
   namespace: foo
+  labels:
+    acorn.io/managed: "true"
 spec:
   rules:
     - from:
