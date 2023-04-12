@@ -1,6 +1,6 @@
 args: {
-    // List of namespaces that must send traffic to all Acorn apps (comma separated)
-    allowTrafficFromNamespaces: ""
+	// List of namespaces that must send traffic to all Acorn apps (comma separated)
+	allowTrafficFromNamespaces: ""
 }
 
 containers: "istio-plugin-controller": {
@@ -34,20 +34,20 @@ containers: "istio-plugin-controller": {
 			resources: ["peerauthentications", "authorizationpolicies"]
 		},
 		{
-		    verbs: ["list", "get", "watch", "update"]
-		    apiGroups: ["networking.k8s.io"]
-		    resources: ["ingresses"]
+			verbs: ["list", "get", "watch", "update"]
+			apiGroups: ["networking.k8s.io"]
+			resources: ["ingresses"]
 		},
 		{
-		    verbs: ["list", "get", "watch"]
-		    apiGroups: [""]
-		    resources: ["services"]
+			verbs: ["list", "get", "watch"]
+			apiGroups: [""]
+			resources: ["services"]
 		},
 		{
-		    verbs: ["list", "get"]
-		    apiGroups: [""]
-		    resources: ["nodes"]
-		}
+			verbs: ["list", "get"]
+			apiGroups: [""]
+			resources: ["nodes"]
+		},
 	]
 }
 
@@ -55,5 +55,3 @@ secrets: image: {
 	type: "template"
 	data: image: "${image://debug}"
 }
-
-images: debug: build: "."
