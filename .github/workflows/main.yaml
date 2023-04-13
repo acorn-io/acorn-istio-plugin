@@ -10,6 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: acorn-io/actions-setup@v1
+        with:
+          acorn-version: main
       - uses: acorn-io/actions-login@v1
         with:
           registry: ghcr.io
