@@ -2,7 +2,7 @@ args: {
 	// List of namespaces that must send traffic to all Acorn apps (comma separated)
 	allowTrafficFromNamespaces: ""
 	// Image to use to kill Istio sidecars (must have curl installed)
-	debugImage: "ghcr.io/acorn-io/acorn-istio-plugin:main"
+	debugImage: "ghcr.io/acorn-io/acorn-istio-plugin:prod"
 }
 
 profiles: dev: {
