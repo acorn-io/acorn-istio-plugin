@@ -1,12 +1,17 @@
 args: {
 	// List of namespaces that must send traffic to all Acorn apps (comma separated)
 	allowTrafficFromNamespaces: ""
+	// Image to use to kill Istio sidecars (must have curl installed)
+	debugImage: "ghcr.io/acorn-io/acorn-istio-plugin:prod"
+}
+
+profiles: dev: {
+    debugImage: "curlimages/curl"
 }
 
 containers: "istio-plugin-controller": {
 	build: "."
-	env: IMAGE: "${secret://image/image}"
-	command: ["--debug-image", "$(IMAGE)", "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces]
+	command: ["--debug-image", args.debugImage, "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces]
 	permissions: clusterRules: [
 		{
 			verbs: ["list", "get", "patch", "update", "watch"]
@@ -31,7 +36,7 @@ containers: "istio-plugin-controller": {
 		{
 			verbs: ["*"]
 			apiGroups: ["security.istio.io"]
-			resources: ["peerauthentications", "authorizationpolicies"]
+			resources: ["peerauthentications", "peerauthentications/status", "authorizationpolicies", "authorizationpolicies/status"]
 		},
 		{
 			verbs: ["list", "get", "watch", "update"]
@@ -49,9 +54,4 @@ containers: "istio-plugin-controller": {
 			resources: ["nodes"]
 		},
 	]
-}
-
-secrets: image: {
-	type: "template"
-	data: image: "${image://debug}"
 }
