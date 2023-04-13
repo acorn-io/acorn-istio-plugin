@@ -33,7 +33,7 @@ containers: "istio-plugin-controller": {
 		{
 			verbs: ["*"]
 			apiGroups: ["security.istio.io"]
-			resources: ["peerauthentications", "peerauthentications/status", "authorizationpolicies", "authorizationpolicies/status"]
+			resources: ["peerauthentications", "authorizationpolicies"]
 		},
 		{
 			verbs: ["list", "get", "watch", "update"]
