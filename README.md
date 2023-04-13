@@ -45,7 +45,7 @@ Run the plugin with Acorn:
 
 ```shell
 # dev mode:
-acorn run --name acorn-istio-plugin --profile dev -i .
+acorn run --name acorn-istio-plugin -i .
 
 # latest main build:
 acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:main
