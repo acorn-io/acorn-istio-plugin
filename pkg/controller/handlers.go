@@ -9,8 +9,10 @@ import (
 	"github.com/acorn-io/baaah/pkg/name"
 	"github.com/acorn-io/baaah/pkg/router"
 	"github.com/sirupsen/logrus"
+	networkingapiv1beta1 "istio.io/api/networking/v1beta1"
 	"istio.io/api/security/v1beta1"
 	typev1beta1 "istio.io/api/type/v1beta1"
+	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	securityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
@@ -185,7 +187,7 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 // The AuthorizationPolicies allow traffic from any pod in the cluster (that way, the ingress controller can
 // proxy traffic to it). This doesn't block incoming network traffic from a different Acorn project in the same
 // cluster, but Acorn's built-in NetworkPolicies already take care of that.
-func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) error {
+func PoliciesForIngress(req router.Request, resp router.Response) error {
 	// check if this is being called as a finalizer for a deleted Ingress
 	// we need this because we sometimes create policies in different namespaces from where their owning Ingresses live
 	if !req.Object.GetDeletionTimestamp().IsZero() {
@@ -333,7 +335,7 @@ func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) er
 // so that the containers will accept traffic coming from outside the Istio mesh. The AuthorizationPolicy will
 // allow connections from any IP address, inside or outside the cluster. This does not block incoming network
 // traffic from another Acorn project in the cluster, but Acorn's built-in NetworkPolicies already take care of that.
-func (h Handler) PoliciesForService(req router.Request, resp router.Response) error {
+func PoliciesForService(req router.Request, resp router.Response) error {
 	service := req.Object.(*corev1.Service)
 
 	// we only care about LoadBalancer services that were created for published TCP/UDP ports
@@ -433,6 +435,44 @@ func LabelIstiodPod(req router.Request, resp router.Response) error {
 	if err := req.Client.Update(req.Ctx, istiodPod); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// VirtualServiceForLink creates an Istio VirtualService for each link between Acorn apps.
+// This is in order to make mTLS work between workloads across namespaces.
+func VirtualServiceForLink(req router.Request, resp router.Response) error {
+	service := req.Object.(*corev1.Service)
+
+	// the link label shouldn't be present on any non-ExternalName type Services, but check anyway
+	if service.Spec.Type != corev1.ServiceTypeExternalName {
+		return nil
+	}
+
+	virtualService := networkingv1beta1.VirtualService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      service.Name,
+			Namespace: service.Namespace,
+			Labels: map[string]string{
+				acornManagedLabel: "true",
+			},
+		},
+		Spec: networkingapiv1beta1.VirtualService{
+			Hosts: []string{service.Name},
+			Http: []*networkingapiv1beta1.HTTPRoute{{
+				Route: []*networkingapiv1beta1.HTTPRouteDestination{{
+					Destination: &networkingapiv1beta1.Destination{
+						Host: service.Spec.ExternalName,
+						Port: &networkingapiv1beta1.PortSelector{
+							Number: uint32(service.Spec.Ports[0].TargetPort.IntVal),
+						},
+					},
+				}},
+			}},
+		},
+	}
+
+	resp.Objects(&virtualService)
 
 	return nil
 }

@@ -65,16 +65,17 @@ func TestHandler_PoliciesForApp(t *testing.T) {
 }
 
 func TestHandler_PoliciesForIngress(t *testing.T) {
-	h := Handler{}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/ingress", h.PoliciesForIngress)
+	tester.DefaultTest(t, scheme.Scheme, "testdata/ingress", PoliciesForIngress)
 }
 
 func TestHandler_PoliciesForIngressExternalName(t *testing.T) {
-	h := Handler{}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/externalname", h.PoliciesForIngress)
+	tester.DefaultTest(t, scheme.Scheme, "testdata/externalname", PoliciesForIngress)
 }
 
 func TestHandler_PoliciesForService(t *testing.T) {
-	h := Handler{}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/service", h.PoliciesForService)
+	tester.DefaultTest(t, scheme.Scheme, "testdata/service", PoliciesForService)
+}
+
+func TestHandler_VirtualServiceForLink(t *testing.T) {
+	tester.DefaultTest(t, scheme.Scheme, "testdata/link", VirtualServiceForLink)
 }

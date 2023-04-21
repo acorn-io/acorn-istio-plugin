@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    acorn.io/link-name: other-app
+  name: linked-hostname
+  namespace: test
+spec:
+  externalName: other-app-container.other-app-namespace.svc.cluster.local
+  ports:
+    - appProtocol: HTTP
+      name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  type: ExternalName

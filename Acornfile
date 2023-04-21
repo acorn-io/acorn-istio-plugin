@@ -33,7 +33,12 @@ containers: "istio-plugin-controller": {
 		{
 			verbs: ["*"]
 			apiGroups: ["security.istio.io"]
-			resources: ["peerauthentications", "authorizationpolicies"]
+			resources: ["peerauthentications", "peerauthentications/status", "authorizationpolicies", "authorizationpolicies/status"]
+		},
+		{
+		    verbs: ["*"],
+		    apiGroups: ["networking.istio.io"]
+		    resources: ["virtualservices", "virtualservices/status"]
 		},
 		{
 			verbs: ["list", "get", "watch", "update"]
@@ -49,6 +54,11 @@ containers: "istio-plugin-controller": {
 			verbs: ["list", "get"]
 			apiGroups: [""]
 			resources: ["nodes"]
+		},
+		{
+		    verbs: ["list", "get", "watch"]
+		    apiGroups: ["internal.acorn.io"]
+		    resources: ["serviceinstances"]
 		},
 	]
 }

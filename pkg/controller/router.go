@@ -29,6 +29,7 @@ var (
 	appNameLabel      = "acorn.io/app-name"
 	appNamespaceLabel = "acorn.io/app-namespace"
 	jobLabel          = "acorn.io/job-name"
+	linkLabel         = "acorn.io/link-name"
 )
 
 func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugImage, allowTrafficFromNamespaces string) error {
@@ -54,14 +55,20 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 		return err
 	}
 
+	linkSelector, err := getLinkSelector()
+	if err != nil {
+		return err
+	}
+
 	router.Type(&corev1.Namespace{}).Selector(projectSelector).HandlerFunc(AddLabels)
 	router.Type(&corev1.Namespace{}).Selector(appNamespaceSelector).HandlerFunc(h.PoliciesForApp)
-	router.Type(&netv1.Ingress{}).Selector(managedSelector).HandlerFunc(h.PoliciesForIngress)
+	router.Type(&netv1.Ingress{}).Selector(managedSelector).HandlerFunc(PoliciesForIngress)
 	router.Type(&securityv1beta1.PeerAuthentication{}).Selector(managedSelector).HandlerFunc(GCOrphans)
 	router.Type(&securityv1beta1.AuthorizationPolicy{}).Selector(managedSelector).HandlerFunc(GCOrphans)
-	router.Type(&corev1.Service{}).Selector(managedSelector).HandlerFunc(h.PoliciesForService)
+	router.Type(&corev1.Service{}).Selector(managedSelector).HandlerFunc(PoliciesForService)
 	router.Type(&corev1.Pod{}).Selector(managedSelector).Selector(jobSelector).HandlerFunc(h.KillIstioSidecar)
 	router.Type(&corev1.Pod{}).Selector(istiodSelector).Namespace(istioSystemNamespace).HandlerFunc(LabelIstiodPod)
+	router.Type(&corev1.Service{}).Selector(linkSelector).HandlerFunc(VirtualServiceForLink)
 	return nil
 }
 
@@ -88,6 +95,14 @@ func getJobPodSelector() (labels.Selector, error) {
 
 func getAppNamespaceSelector() (labels.Selector, error) {
 	req, err := labels.NewRequirement(appNamespaceLabel, selection.Exists, nil)
+	if err != nil {
+		return nil, err
+	}
+	return labels.NewSelector().Add(*req), nil
+}
+
+func getLinkSelector() (labels.Selector, error) {
+	req, err := labels.NewRequirement(linkLabel, selection.Exists, nil)
 	if err != nil {
 		return nil, err
 	}
