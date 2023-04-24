@@ -5,9 +5,7 @@ args: {
 
 containers: "istio-plugin-controller": {
 	build: "."
-	env: {
-        IMAGE: "${secret://image/image}"
-    }
+	env: IMAGE: "${secret://image/image}"
 	command: ["--debug-image", "$(IMAGE)", "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces]
 	permissions: clusterRules: [
 		{
@@ -36,9 +34,9 @@ containers: "istio-plugin-controller": {
 			resources: ["peerauthentications", "peerauthentications/status", "authorizationpolicies", "authorizationpolicies/status"]
 		},
 		{
-		    verbs: ["*"],
-		    apiGroups: ["networking.istio.io"]
-		    resources: ["virtualservices", "virtualservices/status"]
+			verbs: ["*"]
+			apiGroups: ["networking.istio.io"]
+			resources: ["virtualservices", "virtualservices/status"]
 		},
 		{
 			verbs: ["list", "get", "watch", "update"]
@@ -55,27 +53,12 @@ containers: "istio-plugin-controller": {
 			apiGroups: [""]
 			resources: ["nodes"]
 		},
-		{
-		    verbs: ["list", "get", "watch"]
-		    apiGroups: ["internal.acorn.io"]
-		    resources: ["serviceinstances"]
-		},
 	]
 }
 
-secrets: {
-	image: {
-		type: "template"
-		data: {
-			image: "${image://debug}"
-		}
-	}
+secrets: image: {
+	type: "template"
+	data: image: "${image://debug}"
 }
 
-images: {
-    debug: {
-        containerBuild: {
-            context: "."
-        }
-    }
-}
+images: debug: containerBuild: context: "."
