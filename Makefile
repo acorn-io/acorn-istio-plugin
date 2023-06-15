@@ -7,6 +7,9 @@ tidy:
 lint: setup-env
 	golangci-lint --timeout 5m run
 
+generate:
+	go generate
+
 test:
 	go test ./...
 

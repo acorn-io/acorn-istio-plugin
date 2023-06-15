@@ -20,6 +20,7 @@ var (
 	debugImageFlag             = flag.String("debug-image", "ghcr.io/acorn-io/acorn-istio-plugin:main", "Container image used to kill Istio sidecars (needs to have curl installed)")
 	allowTrafficFromNamespaces = flag.String("allow-traffic-from-namespaces", "", `Extra namespaces that should be allowed to send traffic to all Acorn apps (comma-separated).
 								Pods in these namespaces must be part of the Istio service mesh in order to send traffic.`)
+	cilium = flag.Bool("cilium", false, "Use Cilium to get pod CIDRs instead of k8s Node specs")
 )
 
 func main() {
@@ -45,6 +46,7 @@ func main() {
 		K8s:                        k8s,
 		DebugImage:                 *debugImageFlag,
 		AllowTrafficFromNamespaces: *allowTrafficFromNamespaces,
+		UseCilium:                  *cilium,
 	}); err != nil {
 		logrus.Fatal(err)
 	}

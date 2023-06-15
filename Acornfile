@@ -1,12 +1,15 @@
 args: {
 	// List of namespaces that must send traffic to all Acorn apps (comma separated)
 	allowTrafficFromNamespaces: ""
+
+	// Whether the Cilium CNI's CiliumNode resources should be used to determine Pod CIDRs
+	cilium: true
 }
 
 containers: "istio-plugin-controller": {
 	build: "."
 	env: IMAGE: "${secret://image/image}"
-	command: ["--debug-image", "$(IMAGE)", "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces]
+	command: ["--debug-image", "$(IMAGE)", "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces, "--cilium=\(args.cilium)"]
 	permissions: clusterRules: [
 		{
 			verbs: ["list", "get", "patch", "update", "watch"]
@@ -53,6 +56,13 @@ containers: "istio-plugin-controller": {
 			apiGroups: [""]
 			resources: ["nodes"]
 		},
+		if args.cilium {
+			{
+				verbs: ["list", "get"]
+				apiGroups: ["cilium.io"]
+				resources: ["ciliumnodes"]
+			}
+		}
 	]
 }
 
