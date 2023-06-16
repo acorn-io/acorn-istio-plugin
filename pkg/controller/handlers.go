@@ -208,11 +208,11 @@ func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) er
 	)
 	if h.useCilium {
 		podCIDRs, err = cidr.GetPodCIDRsFromCilium(req)
-		if err != nil {
-			return err
-		}
 	} else {
 		podCIDRs, err = cidr.GetPodCIDRsFromNodes(req)
+	}
+	if err != nil {
+		return err
 	}
 
 	// create a mapping of k8s Service names to published port names/numbers
