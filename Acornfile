@@ -2,7 +2,7 @@ args: {
 	// List of namespaces that must send traffic to all Acorn apps (comma separated)
 	allowTrafficFromNamespaces: ""
 
-	// Whether the Cilium CNI's CiliumNode resources should be used to determine Pod CIDRs
+	// If true, use the Cilium CNI's CiliumNode custom resources to determine Pod CIDRs, instead of k8s Node specs
 	cilium: true
 }
 
@@ -62,7 +62,7 @@ containers: "istio-plugin-controller": {
 				apiGroups: ["cilium.io"]
 				resources: ["ciliumnodes"]
 			}
-		}
+		},
 	]
 }
 
