@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/acorn-io/acorn-istio-plugin/pkg/cidr"
 	"github.com/acorn-io/baaah/pkg/name"
 	"github.com/acorn-io/baaah/pkg/router"
 	"github.com/sirupsen/logrus"
@@ -20,6 +19,7 @@ import (
 	apierror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,7 +42,6 @@ type Handler struct {
 	client                     kubernetes.Interface
 	debugImage                 string
 	allowTrafficFromNamespaces string
-	useCilium                  bool
 }
 
 // AddLabels adds the "istio-injection: enabled" label on every Acorn project namespace
@@ -188,7 +187,7 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 // The AuthorizationPolicies allow traffic from any pod in the cluster (that way, the ingress controller can
 // proxy traffic to it). This doesn't block incoming network traffic from a different Acorn project in the same
 // cluster, but Acorn's built-in NetworkPolicies already take care of that.
-func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) error {
+func PoliciesForIngress(req router.Request, resp router.Response) error {
 	// check if this is being called as a finalizer for a deleted Ingress
 	// we need this because we sometimes create policies in different namespaces from where their owning Ingresses live
 	if !req.Object.GetDeletionTimestamp().IsZero() {
@@ -202,17 +201,17 @@ func (h Handler) PoliciesForIngress(req router.Request, resp router.Response) er
 
 	// first, determine the pod IP address ranges from the nodes
 	// this information will be used later in the creation of the AuthorizationPolicy
-	var (
-		podCIDRs []string
-		err      error
-	)
-	if h.useCilium {
-		podCIDRs, err = cidr.GetPodCIDRsFromCilium(req)
-	} else {
-		podCIDRs, err = cidr.GetPodCIDRsFromNodes(req)
+	var podCIDRs []string
+	nodes := corev1.NodeList{}
+	if err := req.List(&nodes, &client.ListOptions{}); err != nil {
+		return fmt.Errorf("failed to list nodes: %w", err)
 	}
-	if err != nil {
-		return err
+	for _, node := range nodes.Items {
+		for _, cidr := range node.Spec.PodCIDRs {
+			if !slices.Contains(podCIDRs, cidr) {
+				podCIDRs = append(podCIDRs, cidr)
+			}
+		}
 	}
 
 	// create a mapping of k8s Service names to published port names/numbers

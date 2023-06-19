@@ -20,9 +20,8 @@ make build
 
 ## Args
 
-- `--allow-traffic-from-namespaces`: (string, default `""`) list of namespaces to allow to connect to all Acorn apps as a single string, comma separated
+- `--allow-traffic-from-namespaces`: list of namespaces to allow to connect to all Acorn apps as a single string, comma separated
   - example: `--allow-traffic-from-namespaces "monitoring,kube-system"`
-- `--cilium`: (bool, default `true`) whether to use the Cilium CNI to determine pod CIDRs (k8s Node specs will be used if disabled)
 
 ## Prerequisites
 
@@ -75,11 +74,11 @@ Run the plugin with Acorn:
 
 ```shell
 # dev mode:
-acorn run --name acorn-istio-plugin -i . --cilium=false
+acorn run --name acorn-istio-plugin -i .
 
 # latest main build:
-acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:main --cilium=false
+acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:main
 
 # production:
-acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:prod --cilium=false
+acorn run --name acorn-istio-plugin ghcr.io/acorn-io/acorn-istio-plugin:prod
 ```
