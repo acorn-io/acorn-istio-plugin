@@ -1,7 +1,6 @@
 package scheme
 
 import (
-	"github.com/acorn-io/acorn-istio-plugin/pkg/cilium"
 	"github.com/rancher/wrangler/pkg/merr"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	securityv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
@@ -36,7 +35,6 @@ func AddToScheme(scheme *runtime.Scheme) error {
 	errs = append(errs, apiextensionv1.AddToScheme(scheme))
 	errs = append(errs, securityv1beta1.AddToScheme(scheme))
 	errs = append(errs, networkingv1beta1.AddToScheme(scheme))
-	errs = append(errs, cilium.AddToScheme(scheme))
 	return merr.NewErrors(errs...)
 }
 

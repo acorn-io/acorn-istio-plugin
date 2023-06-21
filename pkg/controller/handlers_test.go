@@ -65,25 +65,11 @@ func TestHandler_PoliciesForApp(t *testing.T) {
 }
 
 func TestHandler_PoliciesForIngress(t *testing.T) {
-	h := Handler{
-		allowTrafficFromNamespaces: "monitoring",
-	}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/ingress", h.PoliciesForIngress)
-}
-
-func TestHandler_PoliciesForIngressWithCilium(t *testing.T) {
-	h := Handler{
-		allowTrafficFromNamespaces: "monitoring",
-		useCilium:                  true,
-	}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/ingress-cilium", h.PoliciesForIngress)
+	tester.DefaultTest(t, scheme.Scheme, "testdata/ingress", PoliciesForIngress)
 }
 
 func TestHandler_PoliciesForIngressExternalName(t *testing.T) {
-	h := Handler{
-		allowTrafficFromNamespaces: "monitoring",
-	}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/externalname", h.PoliciesForIngress)
+	tester.DefaultTest(t, scheme.Scheme, "testdata/externalname", PoliciesForIngress)
 }
 
 func TestHandler_PoliciesForService(t *testing.T) {
