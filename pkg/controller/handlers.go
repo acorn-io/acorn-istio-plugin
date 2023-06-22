@@ -31,11 +31,6 @@ const (
 	acornProjectNameLabel   = "acorn.io/app-namespace"
 	acornContainerNameLabel = "acorn.io/container-name"
 	acornManagedLabel       = "acorn.io/managed"
-
-	masterLabel = "on-master"
-
-	nodeRoleControlPlaneLabel = "node-role.kubernetes.io/control-plane"
-	nodeRoleMasterLabel       = "node-role.kubernetes.io/master"
 )
 
 type Handler struct {
@@ -408,33 +403,6 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 	}
 
 	resp.Objects(&authPolicy)
-
-	return nil
-}
-
-func LabelIstiodPod(req router.Request, resp router.Response) error {
-	istiodPod := req.Object.(*corev1.Pod)
-
-	if istiodPod.Labels[masterLabel] == "true" || istiodPod.Labels[masterLabel] == "false" {
-		return nil
-	}
-
-	node := corev1.Node{}
-	key := client.ObjectKey{Name: istiodPod.Spec.NodeName}
-	if err := req.Client.Get(req.Ctx, key, &node); err != nil {
-		return err
-	}
-
-	if node.Labels[nodeRoleMasterLabel] == "true" || node.Labels[nodeRoleControlPlaneLabel] == "true" {
-		istiodPod.Labels[masterLabel] = "true"
-	} else {
-		istiodPod.Labels[masterLabel] = "false"
-	}
-
-	logrus.Infof("Updating Istiod pod %v to add label on-master='%s'", istiodPod.Name, istiodPod.Labels[masterLabel])
-	if err := req.Client.Update(req.Ctx, istiodPod); err != nil {
-		return err
-	}
 
 	return nil
 }
