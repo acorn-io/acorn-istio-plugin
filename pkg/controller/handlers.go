@@ -413,7 +413,7 @@ func VirtualServiceForLink(req router.Request, resp router.Response) error {
 	service := req.Object.(*corev1.Service)
 
 	// the link label shouldn't be present on any non-ExternalName type Services, but check anyway
-	if service.Spec.Type != corev1.ServiceTypeExternalName {
+	if service.Spec.Type != corev1.ServiceTypeExternalName || len(service.Spec.Ports) == 0 {
 		return nil
 	}
 
