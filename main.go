@@ -25,6 +25,8 @@ var (
 func main() {
 	flag.Parse()
 
+	logrus.SetLevel(logrus.ErrorLevel)
+
 	fmt.Printf("Version: %s\n", version.Get())
 	if *versionFlag {
 		return
