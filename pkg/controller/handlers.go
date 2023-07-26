@@ -315,3 +315,7 @@ func VirtualServiceForLink(req router.Request, resp router.Response) error {
 	resp.Objects(&virtualService)
 	return nil
 }
+
+func DoNothing(req router.Request, resp router.Response) error {
+	return nil
+}
