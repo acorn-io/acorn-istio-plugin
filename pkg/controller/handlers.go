@@ -24,6 +24,9 @@ import (
 )
 
 const (
+	systemIngress   = "acorn-dns-ingress"
+	systemNamespace = "acorn-system"
+
 	injectionLabel            = "istio-injection"
 	proxySidecarContainerName = "istio-proxy"
 
@@ -115,7 +118,7 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 	appNamespace := req.Object.(*corev1.Namespace)
 	projectName := appNamespace.Labels[acornProjectNameLabel]
 
-	// create the PeerAuthentication to set entire app to mTLS STRICT mode by default
+	// Create the PeerAuthentication to set entire app to mTLS STRICT mode by default
 	peerAuth := securityv1beta1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.SafeConcatName(appNamespace.Name, "strict"),
@@ -133,8 +136,8 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 
 	resp.Objects(&peerAuth)
 
-	// next, create the AuthorizationPolicy
-	// allow traffic from the other namespaces that belong to the same project
+	// Next, create the AuthorizationPolicy.
+	// Allow traffic from the other namespaces that belong to the same project.
 	otherNamespaces := corev1.NamespaceList{}
 	if err := req.Client.List(req.Ctx, &otherNamespaces, client.MatchingLabels{
 		acornProjectNameLabel: projectName,
@@ -143,7 +146,7 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 	}
 
 	var allowedNamespaces []string
-	// also allow traffic from any namespaces that were specified in --allow-traffic-from-namespaces
+	// Also allow traffic from any namespaces that were specified in --allow-traffic-from-namespaces
 	if h.allowTrafficFromNamespaces != "" {
 		allowedNamespaces = strings.Split(h.allowTrafficFromNamespaces, ",")
 	}
@@ -183,19 +186,18 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 // proxy traffic to it). This doesn't block incoming network traffic from a different Acorn project in the same
 // cluster, but Acorn's built-in NetworkPolicies already take care of that.
 func PoliciesForIngress(req router.Request, resp router.Response) error {
-	// check if this is being called as a finalizer for a deleted Ingress
-	// we need this because we sometimes create policies in different namespaces from where their owning Ingresses live
-	if !req.Object.GetDeletionTimestamp().IsZero() {
+	ingress := req.Object.(*netv1.Ingress)
+
+	// Don't process the Ingress resource created for Acorn DNS, since it doesn't refer to any pods
+	if ingress.Name == systemIngress && ingress.Namespace == systemNamespace {
 		return nil
 	}
-
-	ingress := req.Object.(*netv1.Ingress)
 
 	appName := ingress.Labels[acornAppNameLabel]
 	projectName := ingress.Labels[acornProjectNameLabel]
 
-	// first, determine the pod IP address ranges from the nodes
-	// this information will be used later in the creation of the AuthorizationPolicy
+	// First, determine the pod IP address ranges from the nodes.
+	// This information will be used later in the creation of the AuthorizationPolicy.
 	var podCIDRs []string
 	nodes := corev1.NodeList{}
 	if err := req.List(&nodes, &client.ListOptions{}); err != nil {
@@ -209,7 +211,7 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 		}
 	}
 
-	// create a mapping of k8s Service names to published port names/numbers
+	// Create a mapping of k8s Service names to published port names/numbers
 	svcNameToPorts := make(map[string][]netv1.ServiceBackendPort)
 	for _, rule := range ingress.Spec.Rules {
 		for _, path := range rule.HTTP.Paths {
@@ -220,7 +222,7 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 	}
 
 	for svcName, ports := range svcNameToPorts {
-		// get the Service from k8s
+		// Get the Service from k8s
 		svc := corev1.Service{}
 		err := req.Get(&svc, ingress.Namespace, svcName)
 		if err != nil {
@@ -234,7 +236,7 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 		if svc.Spec.Type == corev1.ServiceTypeExternalName {
 			externalName := svc.Spec.ExternalName
 
-			// the ExternalName is in the format <service name>.<namespace>.svc.<cluster domain>
+			// The ExternalName is in the format <service name>.<namespace>.svc.<cluster domain>
 			svcName, rest, ok := strings.Cut(externalName, ".")
 			if !ok {
 				return fmt.Errorf("failed to parse ExternalName '%s' of svc '%s'", externalName, svc.Name)
@@ -255,11 +257,11 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 
 		policyName := name.SafeConcatName(projectName, appName, ingress.Name, svcName)
 
-		// find all published port numbers
+		// Find all published port numbers
 		portsMTLS := make(map[uint32]*v1beta1.PeerAuthentication_MutualTLS, len(ports))
 		var portNums []string
 		for _, port := range ports {
-			// try to map this ingress port to a port on the service
+			// Try to map this ingress port to a port on the service
 			for _, svcPort := range svc.Spec.Ports {
 				if (svcPort.Name != "" && svcPort.Name == port.Name) || svcPort.Port == port.Number {
 					targetPort := svcPort.TargetPort
@@ -271,7 +273,7 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 			}
 		}
 
-		// create a permissive PeerAuthentication for pods targeted by the service
+		// Create a permissive PeerAuthentication for pods targeted by the service
 		peerAuth := securityv1beta1.PeerAuthentication{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      policyName,
@@ -290,7 +292,7 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 
 		resp.Objects(&peerAuth)
 
-		// create an AuthorizationPolicy to allow traffic from all pods
+		// Create an AuthorizationPolicy to allow traffic from all pods
 		authPolicy := securityv1beta1.AuthorizationPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      policyName,
@@ -333,7 +335,7 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 func PoliciesForService(req router.Request, resp router.Response) error {
 	service := req.Object.(*corev1.Service)
 
-	// we only care about LoadBalancer services that were created for published TCP/UDP ports
+	// We only care about LoadBalancer services that were created for published TCP/UDP ports
 	if service.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return nil
 	}
@@ -353,7 +355,7 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 
 	policyName := name.SafeConcatName(projectName, appName, service.Name, containerName)
 
-	// create a permissive PeerAuthentication for pods targeted by the service
+	// Create a permissive PeerAuthentication for pods targeted by the service
 	peerAuth := securityv1beta1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      policyName,
@@ -372,7 +374,7 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 
 	resp.Objects(&peerAuth)
 
-	// create an AuthorizationPolicy to allow traffic from anywhere to the published ports
+	// Create an AuthorizationPolicy to allow traffic from anywhere to the published ports
 	authPolicy := securityv1beta1.AuthorizationPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      policyName,
@@ -412,7 +414,7 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 func VirtualServiceForLink(req router.Request, resp router.Response) error {
 	service := req.Object.(*corev1.Service)
 
-	// the link label shouldn't be present on any non-ExternalName type Services, but check anyway
+	// The link label shouldn't be present on any non-ExternalName type Services, but check anyway
 	if service.Spec.Type != corev1.ServiceTypeExternalName || len(service.Spec.Ports) == 0 {
 		return nil
 	}
