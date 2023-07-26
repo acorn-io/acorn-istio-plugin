@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -195,7 +194,6 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 
 		// Find all published port numbers
 		portsMTLS := make(map[uint32]*v1beta1.PeerAuthentication_MutualTLS, len(ports))
-		var portNums []string
 		for _, port := range ports {
 			// Try to map this ingress port to a port on the service
 			for _, svcPort := range svc.Spec.Ports {
@@ -204,7 +202,6 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 					portsMTLS[uint32(targetPort.IntVal)] = &v1beta1.PeerAuthentication_MutualTLS{
 						Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE,
 					}
-					portNums = append(portNums, strconv.Itoa(int(targetPort.IntVal)))
 				}
 			}
 		}
@@ -248,12 +245,10 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 	containerName := service.Labels[acornContainerNameLabel]
 
 	portsMTLS := make(map[uint32]*v1beta1.PeerAuthentication_MutualTLS, len(service.Spec.Ports))
-	var portNums []string
 	for _, port := range service.Spec.Ports {
 		portsMTLS[uint32(port.TargetPort.IntVal)] = &v1beta1.PeerAuthentication_MutualTLS{
 			Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE,
 		}
-		portNums = append(portNums, strconv.Itoa(int(port.TargetPort.IntVal)))
 	}
 
 	policyName := name.SafeConcatName(projectName, appName, service.Name, containerName)
