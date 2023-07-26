@@ -60,6 +60,9 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 	router.Type(&corev1.Service{}).Selector(managedSelector).HandlerFunc(PoliciesForService)
 	router.Type(&corev1.Pod{}).Selector(managedSelector).Selector(jobSelector).HandlerFunc(h.KillIstioSidecar)
 	router.Type(&corev1.Service{}).Selector(linkSelector).HandlerFunc(VirtualServiceForLink)
+
+	// Delete existing AuthorizationPolicies
+	router.Type(&securityv1beta1.AuthorizationPolicy{}).HandlerFunc(DoNothing)
 	return nil
 }
 

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,8 +18,6 @@ import (
 	apierror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/strings/slices"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -109,14 +106,11 @@ func (h Handler) KillIstioSidecar(req router.Request, resp router.Response) erro
 	return nil
 }
 
-// PoliciesForApp creates an Istio PeerAuthentication and AuthorizationPolicy in each app's namespace.
+// PoliciesForApp creates an Istio PeerAuthentication in each app's namespace.
 // The PeerAuthentication sets mTLS to STRICT mode, meaning that all pods in the namespace will only
-// accept incoming network traffic from other pods in the Istio mesh. The AuthorizationPolicy specifies that
-// the only traffic allowed into the pods must come from other Acorn apps in the same project, or one of the
-// namespaces specified by --allow-traffic-from-namespaces.
+// accept incoming network traffic from other pods in the Istio mesh.
 func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error {
 	appNamespace := req.Object.(*corev1.Namespace)
-	projectName := appNamespace.Labels[acornProjectNameLabel]
 
 	// Create the PeerAuthentication to set entire app to mTLS STRICT mode by default
 	peerAuth := securityv1beta1.PeerAuthentication{
@@ -135,56 +129,12 @@ func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error 
 	}
 
 	resp.Objects(&peerAuth)
-
-	// Next, create the AuthorizationPolicy.
-	// Allow traffic from the other namespaces that belong to the same project.
-	otherNamespaces := corev1.NamespaceList{}
-	if err := req.Client.List(req.Ctx, &otherNamespaces, client.MatchingLabels{
-		acornProjectNameLabel: projectName,
-	}); err != nil {
-		return fmt.Errorf("failed to list namespaces: %w", err)
-	}
-
-	var allowedNamespaces []string
-	// Also allow traffic from any namespaces that were specified in --allow-traffic-from-namespaces
-	if h.allowTrafficFromNamespaces != "" {
-		allowedNamespaces = strings.Split(h.allowTrafficFromNamespaces, ",")
-	}
-	for _, namespace := range otherNamespaces.Items {
-		allowedNamespaces = append(allowedNamespaces, namespace.Name)
-	}
-
-	authPolicy := securityv1beta1.AuthorizationPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.SafeConcatName(appNamespace.Name, "authorization"),
-			Namespace: appNamespace.Name,
-			Labels: map[string]string{
-				acornManagedLabel: "true",
-			},
-		},
-		Spec: v1beta1.AuthorizationPolicy{
-			Rules: []*v1beta1.Rule{{
-				From: []*v1beta1.Rule_From{{
-					Source: &v1beta1.Source{
-						Namespaces: allowedNamespaces,
-					}},
-				}},
-			},
-			Action: v1beta1.AuthorizationPolicy_ALLOW,
-		},
-	}
-
-	resp.Objects(&authPolicy)
-
 	return nil
 }
 
-// PoliciesForIngress creates Istio PeerAuthentication and AuthorizationPolicy resources for each Ingress resource
-// created by Acorn. The PeerAuthentications set mTLS to PERMISSIVE mode on the ports exposed by the
+// PoliciesForIngress creates Istio an PeerAuthentication for each Ingress resource
+// created by Acorn. The PeerAuthentication sets mTLS to PERMISSIVE mode on the ports exposed by the
 // Ingresses so that the containers will accept traffic coming from outside the Istio mesh.
-// The AuthorizationPolicies allow traffic from any pod in the cluster (that way, the ingress controller can
-// proxy traffic to it). This doesn't block incoming network traffic from a different Acorn project in the same
-// cluster, but Acorn's built-in NetworkPolicies already take care of that.
 func PoliciesForIngress(req router.Request, resp router.Response) error {
 	ingress := req.Object.(*netv1.Ingress)
 
@@ -195,21 +145,6 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 
 	appName := ingress.Labels[acornAppNameLabel]
 	projectName := ingress.Labels[acornProjectNameLabel]
-
-	// First, determine the pod IP address ranges from the nodes.
-	// This information will be used later in the creation of the AuthorizationPolicy.
-	var podCIDRs []string
-	nodes := corev1.NodeList{}
-	if err := req.List(&nodes, &client.ListOptions{}); err != nil {
-		return fmt.Errorf("failed to list nodes: %w", err)
-	}
-	for _, node := range nodes.Items {
-		for _, cidr := range node.Spec.PodCIDRs {
-			if !slices.Contains(podCIDRs, cidr) {
-				podCIDRs = append(podCIDRs, cidr)
-			}
-		}
-	}
 
 	// Create a mapping of k8s Service names to published port names/numbers
 	svcNameToPorts := make(map[string][]netv1.ServiceBackendPort)
@@ -259,7 +194,6 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 
 		// Find all published port numbers
 		portsMTLS := make(map[uint32]*v1beta1.PeerAuthentication_MutualTLS, len(ports))
-		var portNums []string
 		for _, port := range ports {
 			// Try to map this ingress port to a port on the service
 			for _, svcPort := range svc.Spec.Ports {
@@ -268,7 +202,6 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 					portsMTLS[uint32(targetPort.IntVal)] = &v1beta1.PeerAuthentication_MutualTLS{
 						Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE,
 					}
-					portNums = append(portNums, strconv.Itoa(int(targetPort.IntVal)))
 				}
 			}
 		}
@@ -291,47 +224,14 @@ func PoliciesForIngress(req router.Request, resp router.Response) error {
 		}
 
 		resp.Objects(&peerAuth)
-
-		// Create an AuthorizationPolicy to allow traffic from all pods
-		authPolicy := securityv1beta1.AuthorizationPolicy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      policyName,
-				Namespace: svc.Namespace,
-				Labels: map[string]string{
-					acornManagedLabel: "true",
-				},
-			},
-			Spec: v1beta1.AuthorizationPolicy{
-				Selector: &typev1beta1.WorkloadSelector{
-					MatchLabels: svc.Spec.Selector,
-				},
-				Rules: []*v1beta1.Rule{{
-					From: []*v1beta1.Rule_From{{
-						Source: &v1beta1.Source{
-							IpBlocks: podCIDRs,
-						}},
-					},
-					To: []*v1beta1.Rule_To{{
-						Operation: &v1beta1.Operation{
-							Ports: portNums,
-						}},
-					}},
-				},
-				Action: v1beta1.AuthorizationPolicy_ALLOW,
-			},
-		}
-
-		resp.Objects(&authPolicy)
 	}
 
 	return nil
 }
 
-// PoliciesForService creates an Istio PeerAuthentication and AuthorizationPolicy for each LoadBalancer Service
+// PoliciesForService creates an Istio PeerAuthentication for each LoadBalancer Service
 // created by Acorn. The PeerAuthentication sets mTLS to PERMISSIVE mode on the ports targeted by the Service
-// so that the containers will accept traffic coming from outside the Istio mesh. The AuthorizationPolicy will
-// allow connections from any IP address, inside or outside the cluster. This does not block incoming network
-// traffic from another Acorn project in the cluster, but Acorn's built-in NetworkPolicies already take care of that.
+// so that the containers will accept traffic coming from outside the Istio mesh.
 func PoliciesForService(req router.Request, resp router.Response) error {
 	service := req.Object.(*corev1.Service)
 
@@ -345,12 +245,10 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 	containerName := service.Labels[acornContainerNameLabel]
 
 	portsMTLS := make(map[uint32]*v1beta1.PeerAuthentication_MutualTLS, len(service.Spec.Ports))
-	var portNums []string
 	for _, port := range service.Spec.Ports {
 		portsMTLS[uint32(port.TargetPort.IntVal)] = &v1beta1.PeerAuthentication_MutualTLS{
 			Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE,
 		}
-		portNums = append(portNums, strconv.Itoa(int(port.TargetPort.IntVal)))
 	}
 
 	policyName := name.SafeConcatName(projectName, appName, service.Name, containerName)
@@ -373,39 +271,6 @@ func PoliciesForService(req router.Request, resp router.Response) error {
 	}
 
 	resp.Objects(&peerAuth)
-
-	// Create an AuthorizationPolicy to allow traffic from anywhere to the published ports
-	authPolicy := securityv1beta1.AuthorizationPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      policyName,
-			Namespace: service.Namespace,
-			Labels: map[string]string{
-				acornManagedLabel: "true",
-			},
-		},
-		Spec: v1beta1.AuthorizationPolicy{
-			Selector: &typev1beta1.WorkloadSelector{
-				MatchLabels: service.Spec.Selector,
-			},
-			Rules: []*v1beta1.Rule{{
-				From: []*v1beta1.Rule_From{{
-					Source: &v1beta1.Source{
-						// allow traffic from anywhere
-						IpBlocks: []string{"0.0.0.0/0"},
-					}},
-				},
-				To: []*v1beta1.Rule_To{{
-					Operation: &v1beta1.Operation{
-						Ports: portNums,
-					}},
-				}},
-			},
-			Action: v1beta1.AuthorizationPolicy_ALLOW,
-		},
-	}
-
-	resp.Objects(&authPolicy)
-
 	return nil
 }
 
@@ -443,6 +308,9 @@ func VirtualServiceForLink(req router.Request, resp router.Response) error {
 	}
 
 	resp.Objects(&virtualService)
+	return nil
+}
 
+func DoNothing(req router.Request, resp router.Response) error {
 	return nil
 }

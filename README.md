@@ -8,8 +8,6 @@ This plugin is responsible for the following:
 1. Killing Istio sidecars on Acorn jobs, once the other containers in the job have completed.
 1. Setting up a STRICT PeerAuthentication for every Acorn app.
 1. Setting up a PERMISSIVE PeerAuthentication for every published port in every Acorn app.
-1. Setting up AuthorizationPolicies to allow only the needed traffic.
-   - The AuthorizationPolicies allow traffic from any IP address to published ports. Acorn's built-in NetworkPolicies are more restrictive than this, and allow only traffic coming from outside the cluster to the published ports, if it is configured properly. See the [docs](https://docs.acorn.io/next/installation/options#kubernetes-networkpolicies) for more information.
 1. Setting up VirtualServices to enable linked Acorn apps to communicate with each other.
 
 ## Build
