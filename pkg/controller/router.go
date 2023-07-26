@@ -26,7 +26,6 @@ var (
 )
 
 func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugImage, allowTrafficFromNamespaces string) error {
-
 	h := Handler{
 		client:                     client,
 		debugImage:                 debugImage,
