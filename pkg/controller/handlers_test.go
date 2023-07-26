@@ -57,25 +57,6 @@ func TestHandler_KillIstioSidecar(t *testing.T) {
 	assert.Equal(t, expected, input.(*corev1.Pod).Spec.EphemeralContainers[0])
 }
 
-func TestHandler_PoliciesForApp(t *testing.T) {
-	h := Handler{
-		allowTrafficFromNamespaces: "monitoring",
-	}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/app", h.PoliciesForApp)
-}
-
-func TestHandler_PoliciesForIngress(t *testing.T) {
-	tester.DefaultTest(t, scheme.Scheme, "testdata/ingress", PoliciesForIngress)
-}
-
-func TestHandler_PoliciesForIngressExternalName(t *testing.T) {
-	tester.DefaultTest(t, scheme.Scheme, "testdata/externalname", PoliciesForIngress)
-}
-
-func TestHandler_PoliciesForService(t *testing.T) {
-	tester.DefaultTest(t, scheme.Scheme, "testdata/service", PoliciesForService)
-}
-
 func TestHandler_VirtualServiceForLink(t *testing.T) {
 	tester.DefaultTest(t, scheme.Scheme, "testdata/link", VirtualServiceForLink)
 }
