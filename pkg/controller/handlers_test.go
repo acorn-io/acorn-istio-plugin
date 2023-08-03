@@ -58,8 +58,7 @@ func TestHandler_KillIstioSidecar(t *testing.T) {
 }
 
 func TestHandler_PoliciesForApp(t *testing.T) {
-	h := Handler{}
-	tester.DefaultTest(t, scheme.Scheme, "testdata/app", h.PoliciesForApp)
+	tester.DefaultTest(t, scheme.Scheme, "testdata/app", PoliciesForApp)
 }
 
 func TestHandler_PoliciesForIngress(t *testing.T) {
