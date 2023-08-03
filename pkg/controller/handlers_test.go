@@ -58,9 +58,7 @@ func TestHandler_KillIstioSidecar(t *testing.T) {
 }
 
 func TestHandler_PoliciesForApp(t *testing.T) {
-	h := Handler{
-		allowTrafficFromNamespaces: "monitoring",
-	}
+	h := Handler{}
 	tester.DefaultTest(t, scheme.Scheme, "testdata/app", h.PoliciesForApp)
 }
 

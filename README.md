@@ -16,11 +16,6 @@ This plugin is responsible for the following:
 make build
 ```
 
-## Args
-
-- `--allow-traffic-from-namespaces`: list of namespaces to allow to connect to all Acorn apps as a single string, comma separated
-  - example: `--allow-traffic-from-namespaces "monitoring,kube-system"`
-
 ## Prerequisites
 
 Your local Kubernetes cluster needs to have Acorn installed with the following options at a minimum:

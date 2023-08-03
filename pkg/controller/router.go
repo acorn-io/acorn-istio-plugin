@@ -25,11 +25,10 @@ var (
 	linkLabel         = "acorn.io/link-name"
 )
 
-func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugImage, allowTrafficFromNamespaces string) error {
+func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugImage string) error {
 	h := Handler{
-		client:                     client,
-		debugImage:                 debugImage,
-		allowTrafficFromNamespaces: allowTrafficFromNamespaces,
+		client:     client,
+		debugImage: debugImage,
 	}
 
 	managedSelector, err := getAcornManagedSelector()
@@ -53,7 +52,7 @@ func RegisterRoutes(router *router.Router, client kubernetes.Interface, debugIma
 	}
 
 	router.Type(&corev1.Namespace{}).Selector(projectSelector).HandlerFunc(AddLabels)
-	router.Type(&corev1.Namespace{}).Selector(appNamespaceSelector).HandlerFunc(h.PoliciesForApp)
+	router.Type(&corev1.Namespace{}).Selector(appNamespaceSelector).HandlerFunc(PoliciesForApp)
 	router.Type(&netv1.Ingress{}).Selector(managedSelector).HandlerFunc(PoliciesForIngress)
 	router.Type(&securityv1beta1.PeerAuthentication{}).Selector(managedSelector).HandlerFunc(GCOrphans)
 	router.Type(&securityv1beta1.AuthorizationPolicy{}).Selector(managedSelector).HandlerFunc(GCOrphans)

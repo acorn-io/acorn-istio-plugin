@@ -16,10 +16,8 @@ import (
 )
 
 var (
-	versionFlag                = flag.Bool("version", false, "print version and exit")
-	debugImageFlag             = flag.String("debug-image", "ghcr.io/acorn-io/acorn-istio-plugin:main", "Container image used to kill Istio sidecars (needs to have curl installed)")
-	allowTrafficFromNamespaces = flag.String("allow-traffic-from-namespaces", "", `Extra namespaces that should be allowed to send traffic to all Acorn apps (comma-separated).
-								Pods in these namespaces must be part of the Istio service mesh in order to send traffic.`)
+	versionFlag    = flag.Bool("version", false, "print version and exit")
+	debugImageFlag = flag.String("debug-image", "ghcr.io/acorn-io/acorn-istio-plugin:main", "Container image used to kill Istio sidecars (needs to have curl installed)")
 )
 
 func main() {
@@ -44,9 +42,8 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 	if err := controller.Start(ctx, controller.Options{
-		K8s:                        k8s,
-		DebugImage:                 *debugImageFlag,
-		AllowTrafficFromNamespaces: *allowTrafficFromNamespaces,
+		K8s:        k8s,
+		DebugImage: *debugImageFlag,
 	}); err != nil {
 		logrus.Fatal(err)
 	}

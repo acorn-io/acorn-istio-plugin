@@ -9,9 +9,8 @@ import (
 )
 
 type Options struct {
-	K8s                        kubernetes.Interface
-	DebugImage                 string
-	AllowTrafficFromNamespaces string
+	K8s        kubernetes.Interface
+	DebugImage string
 }
 
 func Start(ctx context.Context, opt Options) error {
@@ -20,7 +19,7 @@ func Start(ctx context.Context, opt Options) error {
 		return err
 	}
 
-	if err := RegisterRoutes(router, opt.K8s, opt.DebugImage, opt.AllowTrafficFromNamespaces); err != nil {
+	if err := RegisterRoutes(router, opt.K8s, opt.DebugImage); err != nil {
 		return err
 	}
 

@@ -1,12 +1,11 @@
-args: {
-	// List of namespaces that must send traffic to all Acorn apps (comma separated)
-	allowTrafficFromNamespaces: ""
-}
-
 containers: "istio-plugin-controller": {
-	build: "."
-	env: IMAGE: "${secret://image/image}"
-	command: ["--debug-image", "$(IMAGE)", "--allow-traffic-from-namespaces", args.allowTrafficFromNamespaces]
+	localData.airConfig
+	env: {
+		IMAGE: "${secret://image/image}"
+	}
+	if !args.dev {
+		command: ["--debug-image", "$(IMAGE)"]
+	}
 	permissions: clusterRules: [
 		{
 			verbs: ["list", "get", "patch", "update", "watch"]
@@ -62,3 +61,14 @@ secrets: image: {
 }
 
 images: debug: containerBuild: context: "."
+
+localData: airConfig: {
+	build: target: std.ifelse(args.dev, "dev", "base")
+	if args.dev {
+		dirs: {
+			"/app":                  "./"
+			"/go/pkg":               "volume://go-cache?subpath=pkg"
+			"/root/.cache/go-build": "volume://go-cache?subpath=cache"
+		}
+	}
+}

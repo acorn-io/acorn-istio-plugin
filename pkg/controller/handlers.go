@@ -34,9 +34,8 @@ const (
 )
 
 type Handler struct {
-	client                     kubernetes.Interface
-	debugImage                 string
-	allowTrafficFromNamespaces string
+	client     kubernetes.Interface
+	debugImage string
 }
 
 // AddLabels adds the "istio-injection: enabled" label on every Acorn project namespace
@@ -109,7 +108,7 @@ func (h Handler) KillIstioSidecar(req router.Request, resp router.Response) erro
 // PoliciesForApp creates an Istio PeerAuthentication in each app's namespace.
 // The PeerAuthentication sets mTLS to STRICT mode, meaning that all pods in the namespace will only
 // accept incoming network traffic from other pods in the Istio mesh.
-func (h Handler) PoliciesForApp(req router.Request, resp router.Response) error {
+func PoliciesForApp(req router.Request, resp router.Response) error {
 	appNamespace := req.Object.(*corev1.Namespace)
 
 	// Create the PeerAuthentication to set entire app to mTLS STRICT mode by default

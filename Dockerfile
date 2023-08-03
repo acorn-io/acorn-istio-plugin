@@ -1,3 +1,10 @@
+FROM golang as dev
+RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+ENV PATH=/root/go/bin:$PATH
+WORKDIR "/app"
+ENTRYPOINT ["bash", "air.sh"]
+
 FROM golang:1.20 AS build
 COPY / /src
 WORKDIR /src
